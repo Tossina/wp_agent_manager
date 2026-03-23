@@ -5,14 +5,14 @@ Gérez vos sites WordPress et WooCommerce avec l'intelligence artificielle — e
 ![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38bdf8?style=flat-square&logo=tailwindcss)
-![Claude AI](https://img.shields.io/badge/Claude-Sonnet_4.6-orange?style=flat-square)
+![AI](https://img.shields.io/badge/AI-Gemini%20%7C%20OpenAI%20%7C%20Claude-purple?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
 ---
 
 ## Aperçu
 
-WP_MNGR est une application web qui permet de gérer des sites WordPress via une interface de chat alimentée par Claude AI (Anthropic). Décrivez ce que vous voulez faire, l'agent s'occupe du reste.
+WP_MNGR est une application web qui permet de gérer des sites WordPress via une interface de chat alimentée par l'Intelligence Artificielle (Gemini, OpenAI, Claude). Décrivez ce que vous voulez faire en langage naturel, l'agent s'occupe du reste grâce à ses 36 outils spécialisés.
 
 ```
 Vous     → "Installe WooCommerce et configure la boutique pour la France avec 20% de TVA"
@@ -24,12 +24,11 @@ WP_MNGR → Installe le plugin ✅ · Configure la devise EUR ✅ · Active les 
 
 ## Fonctionnalités
 
-- **Gestion des plugins** — installer, activer, désactiver, mettre à jour
-- **Création de contenu** — pages, articles, produits WooCommerce
-- **Configuration WooCommerce** — devise, taxes, livraison, paiements
-- **Audit** — sécurité, performance, mises à jour disponibles
-- **Historique** — journal de toutes les actions effectuées
-- **Multi-sites** — gérez plusieurs sites WordPress depuis un seul tableau de bord
+- **36 Commandes IA (9 Catégories)** — WordPress Core, WooCommerce, Builders, SEO, Sécurité, Performance, Utilisateurs, Médias, Maintenance.
+- **Gestion WooCommerce** — commandes, coupons, livraison, paiements, rapports de ventes.
+- **Thèmes & Builders** — configuration automatique d'Elementor, Divi, Bricks, Beaver, Gutenberg.
+- **Sécurité & Performance** — hardening, nettoyage DB, installation cache (LiteSpeed/W3TC), sauvegardes auto (UpdraftPlus).
+- **Tableau de bord IA** — commandes rapides interactives, historique d'actions complet, gestion multi-sites.
 - **PWA** — installez l'app sur mobile ou desktop
 - **Sécurité** — authentification HMAC-SHA256 entre l'app et WordPress
 
@@ -39,7 +38,7 @@ WP_MNGR → Installe le plugin ✅ · Configure la devise EUR ✅ · Active les 
 
 - **Node.js** 18+
 - **Un site WordPress** (5.8+, PHP 7.4+) accessible publiquement
-- **Clé API Anthropic** — [console.anthropic.com](https://console.anthropic.com)
+- **Clé API IA** — Gemini (Google), OpenAI, ou Claude (Anthropic)
 
 ---
 
@@ -59,9 +58,16 @@ npm install next-themes
 Copiez `.env.local` et renseignez vos valeurs :
 
 ```bash
-# Obligatoire
-ANTHROPIC_API_KEY=sk-ant-api03-...
+# Base (Obligatoire)
 NEXTAUTH_SECRET=                     # openssl rand -base64 32
+NEXTAUTH_URL=http://localhost:3000
+DATABASE_URL=file:./dev.db
+
+# Intelligence Artificielle (Au moins une clé)
+AI_PROVIDER=gemini                   # "gemini" | "openai" | "anthropic" (défaut: premier trouvé)
+GEMINI_API_KEY=AIzaSy...
+OPENAI_API_KEY=sk-proj-...
+ANTHROPIC_API_KEY=sk-ant-api03-...
 NEXTAUTH_URL=http://localhost:3000
 DATABASE_URL=file:./dev.db
 
@@ -86,11 +92,11 @@ npm run dev
 
 ## Plugin WordPress
 
-Le plugin **WP_MNGR Bridge** est requis sur chaque site WordPress à connecter.
+Le plugin **WP_MNGR Bridge (v1.1.0)** est requis sur chaque site WordPress à connecter.
 
 ### Installation
 
-1. Compresser le dossier `wordpress-plugin/wp-agent-bridge/` en `.zip`
+1. Télécharger `wp-mngr-bridge.zip` depuis votre tableau de bord (ou créer le zip depuis `wordpress-plugin/wp-agent-bridge/`)
 2. Dans WordPress : **Extensions → Ajouter → Téléverser**
 3. Installer et activer
 4. Aller dans **Réglages → WP_MNGR** pour copier la clé API
@@ -110,7 +116,7 @@ Chaque requête est signée avec HMAC-SHA256 et contient un timestamp anti-repla
 | Style | Tailwind CSS 3 + Radix UI |
 | Auth | NextAuth v5 |
 | Base de données | Prisma + SQLite |
-| IA | Claude Sonnet 4.6 (Anthropic) |
+| IA | Gemini 2.5 Flash / GPT-4o / Claude 3.5 Sonnet |
 | PWA | next-pwa |
 | Animations | Framer Motion |
 
