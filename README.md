@@ -49,7 +49,7 @@ WP_MNGR → Installe le plugin ✅ · Configure la devise EUR ✅ · Active les 
 
 ```bash
 git clone <votre-repo>
-cd mpiasa_wp
+cd wp_agent_manager
 npm install
 npm install next-themes
 ```
