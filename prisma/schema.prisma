@@ -1,0 +1,138 @@
+// Prisma Schema — WP Agent
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Utilisateurs ──────────────────────────────────────────
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   // hashed with bcrypt
+  role          String    @default("user") // "user" | "admin"
+  plan          String    @default("free") // "free" | "solo" | "agency"
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  sites         Site[]
+  apiKeys       ApiKey[]
+  conversations Conversation[]
+}
+
+// ─── NextAuth (Accounts / Sessions) ────────────────────────
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Sites WordPress ────────────────────────────────────────
+model Site {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  url         String
+  apiKey      String   @unique  // clé API générée côté WP plugin
+  isActive    Boolean  @default(true)
+  wpVersion   String?
+  phpVersion  String?
+  lastSync    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+  logs          ActionLog[]
+}
+
+// ─── Clés API (pour accès programmatique) ──────────────────
+model ApiKey {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  key       String   @unique
+  lastUsed  DateTime?
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Conversations IA ───────────────────────────────────────
+model Conversation {
+  id        String    @id @default(cuid())
+  userId    String
+  siteId    String
+  title     String    @default("Nouvelle conversation")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  site     Site      @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  messages Message[]
+}
+
+// ─── Messages ───────────────────────────────────────────────
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String   // "user" | "assistant"
+  content        String
+  toolCalls      String?  // JSON stringified tool calls
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+// ─── Logs d'actions WordPress ───────────────────────────────
+model ActionLog {
+  id        String   @id @default(cuid())
+  siteId    String
+  action    String   // ex: "install_plugin", "create_post"
+  target    String?  // ex: nom du plugin, ID du post
+  status    String   // "success" | "error" | "pending"
+  details   String?  // JSON response
+  createdAt DateTime @default(now())
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+}
