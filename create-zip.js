@@ -1,35 +1,33 @@
-const fs = require('fs');
+const { execSync } = require('child_process');
 const path = require('path');
-const archiver = require('archiver');
+const fs = require('fs');
 
 const base = process.cwd();
 const srcDir = path.join(base, 'wordpress-plugin', 'wp-agent-bridge');
 const outFile = path.join(base, 'public', 'wp-mngr-bridge.zip');
 
-const output = fs.createWriteStream(outFile);
-const archive = archiver('zip', { zlib: { level: 9 } });
+// Supprimer l'ancien ZIP
+if (fs.existsSync(outFile)) fs.unlinkSync(outFile);
 
-output.on('close', () => {
-  console.log('ZIP créé: ' + archive.pointer() + ' bytes → ' + outFile);
-});
+// PowerShell Compress-Archive : crée un ZIP compatible WordPress
+// On crée un dossier temporaire pour avoir le bon nom de dossier racine dans le ZIP
+const tmpDir = path.join(base, '_tmp_plugin');
+const tmpPlugin = path.join(tmpDir, 'wp-agent-bridge');
 
-archive.on('error', (err) => { throw err; });
-archive.pipe(output);
+if (fs.existsSync(tmpDir)) fs.rmSync(tmpDir, { recursive: true });
+fs.mkdirSync(tmpPlugin, { recursive: true });
 
-// Parcourir récursivement le dossier et forcer les chemins Unix
-function addDir(dir, prefix) {
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-    // Toujours utiliser "/" comme séparateur dans le ZIP (standard ZIP)
-    const zipPath = prefix + '/' + entry.name;
-    if (entry.isDirectory()) {
-      addDir(fullPath, zipPath);
-    } else {
-      archive.file(fullPath, { name: zipPath });
-    }
-  }
-}
+// Copier les fichiers dans le dossier temporaire
+execSync(`xcopy /E /I /Q "${srcDir}" "${tmpPlugin}"`, { stdio: 'pipe' });
 
-addDir(srcDir, 'wp-agent-bridge');
-archive.finalize();
+// Compresser avec PowerShell
+execSync(
+  `powershell -Command "Compress-Archive -Path '${tmpPlugin}' -DestinationPath '${outFile}' -Force"`,
+  { stdio: 'inherit' }
+);
+
+// Nettoyer
+fs.rmSync(tmpDir, { recursive: true });
+
+const size = fs.statSync(outFile).size;
+console.log(`ZIP créé: ${size} bytes → ${outFile}`);

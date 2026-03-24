@@ -3,7 +3,7 @@
  * Plugin Name: WP_MNGR Bridge
  * Plugin URI:  https://wpagent.dev
  * Description: Pont API sécurisé pour WP_MNGR — gérez votre site avec l'intelligence artificielle.
- * Version:     1.1.0
+ * Version:     1.2.0
  * Author:      WP_MNGR
  * Author URI:  https://wpagent.dev
  * License:     GPL v2 or later
@@ -14,8 +14,8 @@
 
 defined('ABSPATH') || exit;
 
-define('WP_AGENT_VERSION', '1.1.0');
-define('WP_AGENT_PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('WP_AGENT_VERSION', '1.2.0');
+define('WP_AGENT_PLUGIN_DIR', str_replace('\\', '/', trailingslashit(dirname(__FILE__))));
 define('WP_AGENT_PLUGIN_URL', plugin_dir_url(__FILE__));
 
 // Chargement des classes

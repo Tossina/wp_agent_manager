@@ -193,12 +193,25 @@ class WP_Agent_Actions {
             wp_set_post_tags($post_id, $params['tags']);
         }
 
+        // Image à la une
+        $image_info = '';
+        if (!empty($params['image_url'])) {
+            $attach_id = $this->_sideload_image($params['image_url'], $post_id, $title);
+            if ($attach_id && !is_wp_error($attach_id)) {
+                set_post_thumbnail($post_id, $attach_id);
+                $image_info = 'Image définie';
+            } else {
+                $image_info = 'Image non définie (URL invalide ou inaccessible)';
+            }
+        }
+
         return [
             'success'   => true,
             'post_id'   => $post_id,
             'title'     => $title,
             'type'      => $type,
             'status'    => $status,
+            'image'     => $image_info ?: 'Aucune image',
             'edit_link' => get_edit_post_link($post_id, 'raw'),
             'view_link' => get_permalink($post_id),
         ];
@@ -313,12 +326,26 @@ class WP_Agent_Actions {
 
         $product_id = $product->save();
 
+        // Image à la une
+        $image_info = '';
+        if (!empty($params['image_url'])) {
+            $attach_id = $this->_sideload_image($params['image_url'], $product_id, $name);
+            if ($attach_id && !is_wp_error($attach_id)) {
+                $product->set_image_id($attach_id);
+                $product->save();
+                $image_info = 'Image définie';
+            } else {
+                $image_info = 'Image non définie (URL invalide ou inaccessible)';
+            }
+        }
+
         return [
             'success'    => true,
             'product_id' => $product_id,
             'name'       => $name,
             'price'      => $price,
             'status'     => $params['status'] ?? 'draft',
+            'image'      => $image_info ?: 'Aucune image',
             'edit_link'  => get_edit_post_link($product_id, 'raw'),
         ];
     }
@@ -1269,5 +1296,154 @@ class WP_Agent_Actions {
 
         return ['success' => true, 'cleared' => $cleared];
     }
+
+    // ═══════════════════════════════════════════════════════
+    // ─── Produit Variable WooCommerce ─────────────────────
+    // ═══════════════════════════════════════════════════════
+
+    public function wc_create_variable_product(array $params): array {
+        if (!class_exists('WooCommerce')) {
+            throw new Exception("WooCommerce n'est pas installé ou activé.");
+        }
+
+        $name = sanitize_text_field($params['name'] ?? '');
+        if (!$name) throw new Exception('Nom du produit requis');
+
+        // Décoder les attributs et variations passés en JSON string
+        $attributes_raw = $params['attributes_json'] ?? '[]';
+        $variations_raw = $params['variations_json'] ?? '[]';
+
+        $attributes_data = json_decode($attributes_raw, true);
+        $variations_data = json_decode($variations_raw, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($attributes_data)) {
+            throw new Exception('attributes_json invalide : JSON mal formé');
+        }
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($variations_data)) {
+            throw new Exception('variations_json invalide : JSON mal formé');
+        }
+
+        // Créer le produit variable
+        $product = new WC_Product_Variable();
+        $product->set_name($name);
+        $product->set_status($params['status'] ?? 'draft');
+
+        if (!empty($params['description']))       $product->set_description(wp_kses_post($params['description']));
+        if (!empty($params['short_description'])) $product->set_short_description(wp_kses_post($params['short_description']));
+        if (!empty($params['sku']))               $product->set_sku(sanitize_text_field($params['sku']));
+
+        // Catégories
+        if (!empty($params['categories'])) {
+            $cat_ids = [];
+            foreach ($params['categories'] as $cat_name) {
+                $term = get_term_by('name', $cat_name, 'product_cat');
+                if (!$term) {
+                    $new_term = wp_insert_term($cat_name, 'product_cat');
+                    if (!is_wp_error($new_term)) $cat_ids[] = $new_term['term_id'];
+                } else {
+                    $cat_ids[] = $term->term_id;
+                }
+            }
+            $product->set_category_ids($cat_ids);
+        }
+
+        // Attributs (ex: Couleur => [Rouge, Bleu], Taille => [S, M, L])
+        $wc_attributes = [];
+        foreach ($attributes_data as $attr) {
+            $attr_name   = sanitize_text_field($attr['name'] ?? '');
+            $attr_values = array_map('sanitize_text_field', $attr['values'] ?? []);
+            if (!$attr_name || empty($attr_values)) continue;
+
+            $attribute = new WC_Product_Attribute();
+            $attribute->set_name($attr_name);
+            $attribute->set_options($attr_values);
+            $attribute->set_position(count($wc_attributes));
+            $attribute->set_visible(true);
+            $attribute->set_variation(true);
+            $wc_attributes[] = $attribute;
+        }
+        $product->set_attributes($wc_attributes);
+        $product_id = $product->save();
+
+        // Image à la une
+        $image_info = '';
+        if (!empty($params['image_url'])) {
+            $attach_id = $this->_sideload_image($params['image_url'], $product_id, $name);
+            if ($attach_id && !is_wp_error($attach_id)) {
+                $product->set_image_id($attach_id);
+                $product->save();
+                $image_info = 'Image définie';
+            } else {
+                $image_info = 'Image non définie (URL invalide ou inaccessible)';
+            }
+        }
+
+        // Variations
+        $created_variations = 0;
+        foreach ($variations_data as $var_data) {
+            $variation = new WC_Product_Variation();
+            $variation->set_parent_id($product_id);
+
+            // Attributs de la variation (ex: {"Couleur":"Rouge","Taille":"S"})
+            $var_attrs = [];
+            foreach ($var_data as $key => $val) {
+                if (in_array($key, ['price', 'sale_price', 'sku', 'stock', 'manage_stock', 'image_url'], true)) continue;
+                $var_attrs[sanitize_title($key)] = sanitize_text_field($val);
+            }
+            $variation->set_attributes($var_attrs);
+
+            if (isset($var_data['price']))      $variation->set_regular_price(sanitize_text_field($var_data['price']));
+            if (isset($var_data['sale_price'])) $variation->set_sale_price(sanitize_text_field($var_data['sale_price']));
+            if (isset($var_data['sku']))        $variation->set_sku(sanitize_text_field($var_data['sku']));
+            if (isset($var_data['stock'])) {
+                $variation->set_manage_stock(true);
+                $variation->set_stock_quantity((int)$var_data['stock']);
+            }
+
+            // Image spécifique à la variation
+            if (!empty($var_data['image_url'])) {
+                $var_img = $this->_sideload_image($var_data['image_url'], $product_id, $name . ' variation');
+                if ($var_img && !is_wp_error($var_img)) $variation->set_image_id($var_img);
+            }
+
+            $variation->save();
+            $created_variations++;
+        }
+
+        // Synchroniser les prix du produit variable
+        WC_Product_Variable::sync($product_id);
+
+        return [
+            'success'    => true,
+            'product_id' => $product_id,
+            'name'       => $name,
+            'type'       => 'variable',
+            'attributes' => count($wc_attributes),
+            'variations' => $created_variations,
+            'image'      => $image_info ?: 'Aucune image',
+            'status'     => $params['status'] ?? 'draft',
+            'edit_link'  => get_edit_post_link($product_id, 'raw'),
+        ];
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // ─── Helpers privés ───────────────────────────────────
+    // ═══════════════════════════════════════════════════════
+
+    /**
+     * Télécharge une image depuis une URL et l'attache à un post.
+     * Retourne l'ID de l'attachment ou WP_Error.
+     */
+    private function _sideload_image(string $url, int $post_id, string $title = '') {
+        require_once ABSPATH . 'wp-admin/includes/media.php';
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+
+        $url = esc_url_raw($url);
+        if (empty($url)) return false;
+
+        return media_sideload_image($url, $post_id, sanitize_text_field($title), 'id');
+    }
+
 }
 

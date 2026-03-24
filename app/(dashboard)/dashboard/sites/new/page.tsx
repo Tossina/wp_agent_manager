@@ -25,7 +25,7 @@ export default function NewSitePage() {
   const [form, setForm] = useState({ name: "", url: "", apiKey: "" });
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
 
-  const pluginDownloadUrl = "/wp-agent-bridge.zip";
+  const pluginDownloadUrl = "/wp-mngr-bridge.zip";
 
   const copyApiKey = () => {
     navigator.clipboard.writeText(form.apiKey);

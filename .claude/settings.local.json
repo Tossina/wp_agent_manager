@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node create-zip.js)",
+      "Bash(python -c \"import zipfile; z=zipfile.ZipFile\\(''f:/mpiasa_wp/public/wp-mngr-bridge.zip''\\); [print\\(n\\) for n in z.namelist\\(\\)]\")"
+    ]
+  }
+}

@@ -69,6 +69,7 @@ export const wpTools: ToolDefinition[] = [
         excerpt: { type: "string", description: "Résumé/extrait" },
         categories: { type: "array", items: { type: "string" }, description: "Noms des catégories" },
         tags: { type: "array", items: { type: "string" }, description: "Tags" },
+        image_url: { type: "string", description: "URL de l'image à la une (téléchargée et attachée automatiquement)" },
       },
       required: ["type", "title", "content"],
     },
@@ -118,7 +119,7 @@ export const wpTools: ToolDefinition[] = [
   },
   {
     name: "wc_create_product",
-    description: "Crée un produit WooCommerce avec prix, description, catégories, SKU et gestion de stock.",
+    description: "Crée un produit simple WooCommerce avec prix, description, catégories, SKU, stock et image.",
     parameters: {
       type: "object",
       properties: {
@@ -132,8 +133,34 @@ export const wpTools: ToolDefinition[] = [
         sku: { type: "string", description: "Référence produit (SKU)" },
         manage_stock: { type: "boolean" },
         stock_quantity: { type: "number", description: "Quantité en stock" },
+        image_url: { type: "string", description: "URL de l'image principale du produit (téléchargée et attachée automatiquement)" },
       },
       required: ["name", "price"],
+    },
+  },
+  {
+    name: "wc_create_variable_product",
+    description: "Crée un produit variable WooCommerce avec attributs (Couleur, Taille…) et variations (chaque combinaison avec son prix, SKU et stock). Utiliser pour tout produit ayant des variantes.",
+    parameters: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Nom du produit" },
+        description: { type: "string", description: "Description longue du produit" },
+        short_description: { type: "string", description: "Description courte" },
+        categories: { type: "array", items: { type: "string" }, description: "Noms des catégories" },
+        status: { type: "string", enum: ["draft", "publish"] },
+        sku: { type: "string", description: "SKU de base (optionnel)" },
+        image_url: { type: "string", description: "URL de l'image principale du produit" },
+        attributes_json: {
+          type: "string",
+          description: 'JSON des attributs. Ex: [{"name":"Couleur","values":["Rouge","Bleu"]},{"name":"Taille","values":["S","M","L"]}]',
+        },
+        variations_json: {
+          type: "string",
+          description: 'JSON des variations. Ex: [{"Couleur":"Rouge","Taille":"S","price":"19.99","sku":"PROD-R-S","stock":10,"image_url":"https://..."}]. Chaque objet contient les attributs + price, sku (optionnel), stock (optionnel), image_url (optionnel).',
+        },
+      },
+      required: ["name", "attributes_json", "variations_json"],
     },
   },
   {
@@ -374,7 +401,7 @@ export const wpTools: ToolDefinition[] = [
     parameters: {
       type: "object",
       properties: {
-        role: { type: "string", enum: ["administrator", "editor", "author", "contributor", "subscriber", ""], description: "Filtrer par rôle" },
+        role: { type: "string", enum: ["administrator", "editor", "author", "contributor", "subscriber"], description: "Filtrer par rôle (vide = tous)" },
         per_page: { type: "number", description: "Nombre d'utilisateurs (max 50)" },
       },
       required: [],

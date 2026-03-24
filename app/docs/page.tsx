@@ -35,7 +35,7 @@ const commandCategories = [
       { name: "wp_install_plugin", desc: "Installer un plugin depuis le répertoire officiel", example: "Installe le plugin WooCommerce" },
       { name: "wp_toggle_plugin", desc: "Activer ou désactiver un plugin", example: "Désactive le plugin Akismet" },
       { name: "wp_update_plugins", desc: "Mettre à jour un ou tous les plugins", example: "Mets à jour tous les plugins" },
-      { name: "wp_create_post", desc: "Créer un article ou une page", example: "Crée une page Mentions Légales" },
+      { name: "wp_create_post", desc: "Créer un article ou une page (avec image à la une via URL)", example: "Crée un article avec l'image https://example.com/photo.jpg" },
       { name: "wp_list_posts", desc: "Lister articles/pages avec filtres", example: "Montre les 10 derniers articles" },
       { name: "wp_audit", desc: "Audit complet (sécurité, performance, MAJ)", example: "Fais un audit complet de mon site" },
     ],
@@ -49,7 +49,8 @@ const commandCategories = [
     bg: "bg-purple-500/5",
     commands: [
       { name: "wc_configure_store", desc: "Configurer devise, pays, taxes, fuseau horaire", example: "Configure ma boutique pour la France en EUR" },
-      { name: "wc_create_product", desc: "Créer un produit (prix, SKU, stock, catégories)", example: "Crée un produit T-shirt noir à 29.99€" },
+      { name: "wc_create_product", desc: "Créer un produit simple (prix, SKU, stock, catégories, image)", example: "Crée un T-shirt noir à 29.99€ avec l'image https://example.com/tshirt.jpg" },
+      { name: "wc_create_variable_product", desc: "Créer un produit variable avec attributs (Couleur, Taille…) et variations (prix/SKU/stock/image par variante)", example: "Crée un T-shirt en Blanc/Noir et tailles S/M/L à 29.99€" },
       { name: "wc_list_products", desc: "Lister produits avec filtres", example: "Liste tous les produits publiés" },
       { name: "wc_list_orders", desc: "Lister commandes avec filtres (statut, date)", example: "Montre les 10 dernières commandes" },
       { name: "wc_update_order", desc: "Changer statut, ajouter note", example: "Passe la commande #42 en expédiée" },
@@ -214,7 +215,7 @@ export default function DocsPage() {
         <div className="text-center mb-20">
           <div className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-full px-4 py-1.5 mb-6">
             <BookOpen className="w-3.5 h-3.5 text-green-400" />
-            <span className="text-xs text-green-400 font-mono">DOCUMENTATION v2.0</span>
+            <span className="text-xs text-green-400 font-mono">DOCUMENTATION v2.1</span>
           </div>
           <h1 className="text-4xl sm:text-5xl font-black text-white mb-4 leading-tight">
             Guide complet
@@ -224,7 +225,7 @@ export default function DocsPage() {
           </h1>
           <p className="text-white/50 max-w-xl mx-auto text-lg">
             Apprenez à gérer vos sites WordPress en langage naturel.
-            36 commandes, 9 catégories, zéro code.
+            39 commandes, 9 catégories, zéro code.
           </p>
         </div>
 
